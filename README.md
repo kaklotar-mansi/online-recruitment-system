@@ -1,191 +1,201 @@
-# Online Recruitment System — Admin Module
+# Online Recruitment System
 
-A full-stack recruitment portal built with the **MERN** stack (MongoDB, Express.js, React.js, Node.js) and styled with **Tailwind CSS**.
+A full-stack recruitment portal with an **Admin Module** (manage job posts, applications, applicant records) and an **Applicant Module** (view jobs, submit applications).
 
-> This copy contains the **Admin module only** (frontend), so it can be developed independently on the `feature/admin-module` branch while a teammate builds the Applicant module on their own branch. The backend API supports both modules — see [Team Workflow](#team-workflow-2-3-members) below for how the two sides get merged.
-
-## Modules
-
-### 1. Admin Module (this copy)
-- Register / Login as Admin
-- Post / Edit / Delete job openings
-- View all applications received for each job
-- View / manage applicant records (with status: Pending, Shortlisted, Rejected, Hired)
-- Dashboard with quick stats (total jobs, total applications, total applicants)
-
-### 2. Applicant Module (built separately by teammate)
-- Register / Login as Applicant
-- Browse all active job listings
-- View full job details
-- Apply to a job (with resume link + cover note)
-- Track status of submitted applications ("My Applications")
+---
 
 ## Tech Stack
 
-| Layer      | Technology                         |
-|------------|-------------------------------------|
-| Frontend   | React.js (Vite), Tailwind CSS, React Router, Axios |
-| Backend    | Node.js, Express.js                |
-| Database   | MongoDB (Mongoose ODM)             |
-| Auth       | JWT (JSON Web Tokens), bcrypt      |
+| Layer | Technology |
+|---|---|
+| Frontend | React.js (Vite), Tailwind CSS, React Router, Axios |
+| Backend | Node.js, Express.js |
+| Database | MongoDB (Atlas — cloud, shared by the whole team) |
+| Auth | JWT (JSON Web Tokens) |
+
+---
 
 ## Project Structure
 
 ```
 recruitment-system/
-├── backend/            # Express + MongoDB API
-│   ├── config/         # DB connection
-│   ├── models/         # Mongoose schemas (User, Job, Application)
-│   ├── middleware/      # JWT auth + role guard, error handler
-│   ├── controllers/     # Route logic
-│   ├── routes/          # API routes
+├── backend/                 # Express + MongoDB API
+│   ├── config/db.js         # Database connection
+│   ├── models/               # User, Job, Application schemas
+│   ├── middleware/           # Auth + role checks, error handling
+│   ├── controllers/          # Route logic
+│   ├── routes/               # API routes
 │   └── server.js
-└── frontend/            # React + Tailwind SPA
+└── frontend/
     └── src/
-        ├── api/          # Axios instance
-        ├── context/      # Auth context (JWT + role)
-        ├── components/   # Reusable UI
-        └── pages/        # Applicant + admin/ pages
+        ├── api/               # Axios instance
+        ├── context/           # Auth state (login/register/logout)
+        ├── components/        # Shared UI (Navbar, ProtectedRoute, etc.)
+        └── pages/
+            ├── Login.jsx
+            ├── Register.jsx
+            ├── Home.jsx        # Job listing
+            └── admin/          # Admin dashboard, manage jobs, applicant records
 ```
 
-## Getting Started
+---
 
-### Prerequisites
-- Node.js v18+
-- MongoDB running locally (or a MongoDB Atlas URI)
+## 1. Clone the Repository
 
-### 1. Backend Setup
+```bash
+git clone https://github.com/<owner-username>/online-recruitment-system.git
+cd online-recruitment-system
+```
+
+---
+
+## 2. Create Your Own Branch
+
+Never work directly on `main`. Each person creates their own branch to work in:
+
+```bash
+git checkout -b feature/<short-name-for-your-work>
+```
+
+Example:
+```bash
+git checkout -b feature/admin-module
+```
+
+---
+
+## 3. Database Setup (MongoDB Atlas)
+
+The whole team shares **one** cloud database, so everyone sees the same jobs and applications instead of separate local copies.
+
+### If the cluster already exists
+Ask whoever set it up for the **connection string**, then skip to Step 3.5.
+
+### If setting up from scratch:
+
+1. Sign up free at [mongodb.com/cloud/atlas/register](https://mongodb.com/cloud/atlas/register)
+2. **Build a Database** → select the **M0 (Free)** tier → **Create Deployment**
+3. **Create a database user** — set a username and password (save these somewhere)
+4. **Network Access → Add IP Address → Allow Access from Anywhere** (`0.0.0.0/0`) — needed since team members connect from different networks
+5. On the cluster, click **Connect → Drivers → Node.js** to get the connection string:
+   ```
+   mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/?appName=<ClusterName>
+   ```
+6. Replace `<password>` with your actual password, and add a database name before the `?`:
+   ```
+   mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/recruitment_system?retryWrites=true&w=majority&appName=<ClusterName>
+   ```
+
+### 3.5 — Connect your local project to the database
+
+1. Go into the `backend` folder
+2. Create a file named exactly `.env`
+3. Paste this in, using the shared connection string (get it privately from your teammate — never from GitHub):
+   ```
+   PORT=5000
+   MONGO_URI=mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/recruitment_system?retryWrites=true&w=majority&appName=<ClusterName>
+   JWT_SECRET=any_long_random_string_here
+   JWT_EXPIRES_IN=7d
+   CLIENT_URL=http://localhost:5173
+   ```
+4. Save. `.env` is already excluded in `.gitignore` — it should never be pushed to GitHub.
+
+---
+
+## 4. Install & Run
+
+**Backend:**
 ```bash
 cd backend
 npm install
-cp .env.example .env     # then fill in your values
-npm run dev               # starts on http://localhost:5000
+npm run dev
+```
+Expected output:
+```
+MongoDB connected: ...
+Server running on port 5000
 ```
 
-### 2. Frontend Setup
+**Frontend** (new terminal):
 ```bash
 cd frontend
 npm install
-cp .env.example .env
-npm run dev                # starts on http://localhost:5173
+npm run dev
 ```
+Opens at `http://localhost:5173`
 
-### 3. Create the first Admin account
-By default, new registrations are `applicant` role. To create an admin, either:
-- Register normally, then in MongoDB manually set `role: "admin"` on that user document, OR
-- Use the `/api/auth/register` route with `"role": "admin"` in the request body (see API docs below) — recommended only for local/dev setup.
+> **Connection error `querySrv ECONNREFUSED`?** Some networks block the DNS lookup MongoDB uses. This is already handled in `backend/config/db.js` (forces Google DNS). If it still fails, try a mobile hotspot to confirm it's a network issue, or manually set your WiFi's DNS to `8.8.8.8` / `8.8.4.4`.
 
-## API Overview
+---
 
-| Method | Endpoint                         | Access        | Description                     |
-|--------|-----------------------------------|---------------|----------------------------------|
-| POST   | /api/auth/register                 | Public        | Register applicant or admin      |
-| POST   | /api/auth/login                    | Public        | Login, returns JWT               |
-| GET    | /api/auth/me                       | Private       | Get logged-in user profile       |
-| GET    | /api/jobs                          | Public        | List active jobs                 |
-| GET    | /api/jobs/:id                      | Public        | Job details                      |
-| POST   | /api/jobs                          | Admin         | Create job                       |
-| PUT    | /api/jobs/:id                      | Admin         | Update job                       |
-| DELETE | /api/jobs/:id                      | Admin         | Delete job                       |
-| POST   | /api/applications                  | Applicant     | Apply to a job                   |
-| GET    | /api/applications/my               | Applicant     | Applicant's own applications     |
-| GET    | /api/applications/job/:jobId       | Admin         | All applications for a job       |
-| GET    | /api/applications                  | Admin         | All applications (applicant records) |
-| PUT    | /api/applications/:id/status       | Admin         | Update application status        |
+## 5. Viewing the Stored Data
 
-## Environment Variables
+1. Go to [cloud.mongodb.com](https://cloud.mongodb.com) and log in
+2. Open your project → your cluster
+3. Click **Browse Collections**
+4. You'll see the `recruitment_system` database with these collections:
+   - **users** — registered accounts (admin + applicant)
+   - **jobs** — posted job listings
+   - **applications** — submitted applications and their status
 
-**backend/.env**
-```
-PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/recruitment_system
-JWT_SECRET=replace_with_a_long_random_string
-JWT_EXPIRES_IN=7d
-CLIENT_URL=http://localhost:5173
-```
+This updates in real time — refresh the page after any register/post/apply action in the app to see the new data.
 
-**frontend/.env**
-```
-VITE_API_URL=http://localhost:5000/api
-```
+---
 
-## Pushing to GitHub
+## 6. Saving & Pushing Your Work
 
 ```bash
-cd recruitment-system
-git init
 git add .
-git commit -m "Initial commit: Online Recruitment System (MERN + Tailwind)"
-git branch -M main
-git remote add origin <your-repo-url>
-git push -u origin main
+git commit -m "describe what you changed"
+git push origin feature/<your-branch-name>
 ```
 
-> `.gitignore` already excludes `node_modules/`, `.env`, and build folders so secrets never get committed.
-
-## Team Workflow (2-3 members)
-
-This repo is structured so multiple people can work on it without stepping on each other:
-
-```
-recruitment-system/
-├── backend/     ← shared API (models, routes, controllers)
-└── frontend/
-    └── src/pages/
-        ├── admin/       ← Admin module owner works here
-        └── (top-level)  ← Applicant module owner works here
-                            (Login, Register, Home, JobDetails, MyApplications)
+### Before starting each work session, pull the latest changes:
+```bash
+git checkout main
+git pull origin main
+git checkout feature/<your-branch-name>
+git merge main
 ```
 
-**Setup (one time):**
-1. One team member creates the GitHub repo and pushes the initial code (steps above).
-2. Repo owner goes to **Settings → Collaborators → Add people** and adds teammates.
-3. Everyone clones the repo locally:
+---
+
+## 7. Creating a Pull Request (merging your work into `main`)
+
+1. Push your branch:
    ```bash
-   git clone <repo-url>
+   git push origin feature/<your-branch-name>
    ```
+2. On GitHub, open the repo → **Pull Requests** tab → **New Pull Request**
+3. Set Base: `main`  ←  Compare: `feature/<your-branch-name>`
+4. Click **Create Pull Request**
+5. Review the changes together, then click **Merge Pull Request**
 
-**Day-to-day workflow:**
-1. Each person works on their own branch:
-   ```bash
-   git checkout -b feature/admin-module       # admin module owner
-   git checkout -b feature/applicant-module   # applicant module owner
-   ```
-2. Commit and push your branch regularly:
-   ```bash
-   git add .
-   git commit -m "Add job posting form"
-   git push origin feature/admin-module
-   ```
-3. When a module is ready, open a **Pull Request** into `main` on GitHub. Teammates review it, then merge.
-4. To avoid merge conflicts, agree upfront on who edits shared files like `frontend/src/App.jsx` (routes) and `backend/server.js` (route mounting) — or take turns adding your own route lines and pull the latest `main` before you start each session:
-   ```bash
-   git checkout main
-   git pull origin main
-   git checkout feature/admin-module
-   git merge main
-   ```
+### Avoiding merge conflicts
+- Work in your own files/folders as much as possible
+- Be extra careful with shared files (like `App.jsx`) — only add your own lines, don't delete or rewrite someone else's routes
+- If two people need to edit the same file, pull the latest `main` into your branch first before making changes
 
-## Sharing One Database (MongoDB Atlas)
+---
 
-If everyone runs MongoDB locally, each person's data stays on their own machine — merging code does **not** merge data. To see the same jobs/applications across all your laptops, use a shared cloud database instead of local MongoDB:
+## 8. Quick Command Cheat Sheet
 
-1. **Create a free cluster** — one team member signs up at [mongodb.com/cloud/atlas/register](https://mongodb.com/cloud/atlas/register), then "Build a Database" → select the **M0 Free** tier.
-2. **Create a database user** — Security → Database Access → Add New Database User. Set a username/password (this is for the app connection, separate from the Atlas login).
-3. **Allow network access** — Security → Network Access → Add IP Address → choose **"Allow Access from Anywhere" (0.0.0.0/0)** so every teammate's machine can connect. (Fine for a college project; not recommended for production.)
-4. **Get the connection string** — on the cluster, click "Connect" → "Drivers" → Node.js. You'll get something like:
-   ```
-   mongodb+srv://username:<password>@cluster.xxxxx.mongodb.net/?retryWrites=true&w=majority
-   ```
-   Replace `<password>` with the actual password and add the database name:
-   ```
-   mongodb+srv://username:password@cluster.xxxxx.mongodb.net/recruitment_system?retryWrites=true&w=majority
-   ```
-5. **Share it privately with your team** (WhatsApp/DM — never commit it to GitHub). Every teammate pastes the same string into their own `backend/.env` as `MONGO_URI=...`.
-6. Now everyone's local backend (`npm run dev`) connects to the same cloud database — a job posted by the admin-module owner is instantly visible to the applicant-module owner, and vice versa.
+```bash
+# One-time
+git clone <repo-url>
+git checkout -b feature/<your-branch-name>
 
-## Roadmap / Nice-to-haves
-- Resume file upload (Multer + Cloudinary/S3) instead of resume link
-- Email notifications on status change
-- Pagination + search/filter on jobs
-- Admin analytics charts
+# Start of every session
+git checkout main
+git pull origin main
+git checkout feature/<your-branch-name>
+git merge main
+
+# After making changes
+git add .
+git commit -m "your message"
+git push origin feature/<your-branch-name>
+
+# When ready to merge
+# → Open a Pull Request on GitHub → Review → Merge
+```
