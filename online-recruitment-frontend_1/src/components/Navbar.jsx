@@ -44,6 +44,12 @@ const Navbar = () => {
             </NavLink>
           )}
 
+          {user?.role === "applicant" && (
+            <NavLink to="/my-applications" className={linkClass}>
+              My Applications
+            </NavLink>
+          )}
+
           {user?.role === "admin" && (
             <>
               <NavLink to="/admin" end className={linkClass}>
@@ -99,6 +105,11 @@ const Navbar = () => {
         {(!user || user.role !== "admin") && (
           <NavLink to="/" end className={linkClass}>
             Jobs
+          </NavLink>
+        )}
+        {user?.role === "applicant" && (
+          <NavLink to="/my-applications" className={linkClass}>
+            My Applications
           </NavLink>
         )}
         {user?.role === "admin" && (
