@@ -18,7 +18,9 @@ const ProtectedRoute = ({ children, role }) => {
           ⛔
         </div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
-        <p className="text-gray-500 mb-5">You have no access to admin.</p>
+        <p className="text-gray-500 mb-5">
+          This page is only available to {role === "admin" ? "admins" : `${role}s`}.
+        </p>
         <Link
           to="/"
           className="inline-block bg-brand-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-brand-700"

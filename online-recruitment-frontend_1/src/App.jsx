@@ -6,6 +6,9 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import JobDetails from "./pages/JobDetails.jsx";
+import ApplyJob from "./pages/ApplyJob.jsx";
+import MyApplications from "./pages/MyApplications.jsx";
 
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import ManageJobs from "./pages/admin/ManageJobs.jsx";
@@ -24,6 +27,27 @@ function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* Job details — public, visible to everyone */}
+        <Route path="/jobs/:id" element={<JobDetails />} />
+
+        {/* Applicant */}
+        <Route
+          path="/jobs/:id/apply"
+          element={
+            <ProtectedRoute role="applicant">
+              <ApplyJob />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-applications"
+          element={
+            <ProtectedRoute role="applicant">
+              <MyApplications />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin */}
         <Route

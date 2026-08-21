@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const JobCard = ({ job }) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
+  <Link
+    to={`/jobs/${job._id}`}
+    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow block"
+  >
     <div className="flex justify-between items-start">
       <div>
         <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
@@ -22,7 +26,7 @@ const JobCard = ({ job }) => (
         </span>
       )}
     </div>
-  </div>
+  </Link>
 );
 
 const Home = () => {
